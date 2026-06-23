@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>AC Station 配置工具</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #131829;
+      --bg-panel: rgba(20, 27, 45, 0.7);
+      --border-cyan: #00d4ff;
+      --border-purple: #7c3aed;
+      --text-primary: #e0f7ff;
+      --text-secondary: #8fa8c9;
+      --text-muted: #5a6f8a;
+      --accent-cyan: #00d4ff;
+      --accent-green: #34ffc8;
+      --accent-purple: #a855f7;
+      --accent-orange: #ff9f43;
+      --accent-red: #ff5470;
+      --accent-blue: #4c9eff;
+      --glow-cyan: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.3);
+      --glow-green: 0 0 10px rgba(52, 255, 200, 0.5), 0 0 20px rgba(52, 255, 200, 0.3);
+      --glow-purple: 0 0 10px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.3);
+    }
+
+    body {
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg-primary);
+      background-image:
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        radial-gradient(ellipse at top, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+      background-size: 30px 30px, 30px 30px, 100% 100%, 100% 100%;
+      color: var(--text-primary);
+      padding: 20px;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(52, 255, 200, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+      animation: floatGradient 15s ease-in-out infinite;
+    }
+
+    /* ====== 公司品牌标识区域 ====== */
+    .company-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(20, 30, 50, 0.7) 0%, rgba(15, 25, 45, 0.5) 100%);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.7s ease-out;
+    }
+
+    .company-header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), var(--accent-purple), transparent);
+      background-size: 200% 100%;
+      animation: gradientShift 4s linear infinite;
+    }
+
+    .company-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 2;
+    }
+
+    .company-logo {
+      width: 64px;
+      height: 64px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .company-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .company-name {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .company-name-main {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-green) 50%, var(--accent-purple) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 4s ease-in-out infinite;
+      text-shadow: none;
+    }
+
+    .company-name-sub {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+    }
+
+    .company-tagline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+      font-family: "Segoe UI", sans-serif;
+      flex-wrap: wrap;
+    }
+
+    .tagline-icon {
+      width: 14px;
+      height: 14px;
+      color: var(--accent-cyan);
+      opacity: 0.8;
+      flex-shrink: 0;
+    }
+
+    .divider-dot {
+      color: var(--accent-purple);
+      font-size: 6px;
+      opacity: 0.7;
+    }
+
+    /* ====== 应用标题栏 ====== */
+    .app-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .title-left .status {
+      width: 10px;
+      height: 10px;
+    }
+
+    .title-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .version-badge {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-family: "Consolas", monospace;
+      color: var(--accent-cyan);
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.25);
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* ====== 标题栏内产品卡片 ====== */
+    .product-inline-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px 4px 4px;
+      background: radial-gradient(ellipse at 25% 50%, rgba(0, 212, 255, 0.08) 0%, rgba(15, 20, 35, 0.6) 60%, rgba(10, 15, 25, 0.8) 100%);
+      border: 1px solid rgba(0, 212, 255, 0.25);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .product-inline-glow {
+      position: absolute;
+      top: 50%;
+      left: 38px;
+      width: 70px;
+      height: 70px;
+      background: radial-gradient(circle, rgba(52, 255, 200, 0.18) 0%, transparent 70%);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .product-inline-svg {
+      width: 78px;
+      height: 78px;
+      z-index: 2;
+      animation: floatProductInline 3.5s ease-in-out infinite;
+      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
+      flex-shrink: 0;
+    }
+
+    @keyframes floatProductInline {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-2px);
+      }
+    }
+
+    .product-inline-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      z-index: 2;
+    }
+
+    .p-dot {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    .product-inline-label span:last-child {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+    }
+
+    h1 {
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 50%, var(--accent-green) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      animation: gradientShift 5s ease-in-out infinite;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 10px;
+      padding: 16px;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+      opacity: 0.6;
+    }
+
+    .panel-title {
+      color: var(--accent-cyan);
+      font-size: 14px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      padding-bottom: 8px;
+      position: relative;
+    }
+
+    .panel-title::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+      box-shadow: var(--glow-cyan);
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .field-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(0, 212, 255, 0.04);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 8px;
+    }
+
+    .field-group label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      min-width: auto;
+      white-space: nowrap;
+    }
+
+    .btn-group {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .btn-option {
+      padding: 6px 12px;
+      background: rgba(0, 20, 40, 0.4);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .btn-option:hover {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: rgba(0, 212, 255, 0.4);
+      color: var(--text-primary);
+    }
+
+    .btn-option.active {
+      background: linear-gradient(135deg, rgba(0, 100, 140, 0.6), rgba(0, 60, 100, 0.6));
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 8px rgba(0, 212, 255, 0.3), inset 0 0 6px rgba(0, 212, 255, 0.15);
+      text-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      min-width: 60px;
+      font-weight: 500;
+    }
+
+    select,
+    input,
+    textarea,
+    button {
+      background: rgba(0, 20, 40, 0.6);
+      color: var(--text-primary);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    select:hover,
+    input:hover,
+    textarea:hover {
+      border-color: rgba(0, 212, 255, 0.5);
+    }
+
+    button {
+      cursor: pointer;
+      background: linear-gradient(135deg, #0a4a6b, #0e639c);
+      border: 1px solid rgba(0, 212, 255, 0.4);
+      color: #fff;
+      padding: 8px 18px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    button:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    button:hover:not(:disabled) {
+      background: linear-gradient(135deg, #0e639c, #1177bb);
+      box-shadow: var(--glow-cyan);
+    }
+
+    button:disabled {
+      background: rgba(30, 40, 60, 0.5);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      border-color: rgba(100, 120, 150, 0.3);
+      opacity: 0.7;
+    }
+
+    button.success {
+      background: linear-gradient(135deg, #0a7a5e, #4ec9b0);
+      border-color: rgba(52, 255, 200, 0.4);
+    }
+
+    button.success:hover:not(:disabled) {
+      background: linear-gradient(135deg, #4ec9b0, #5fd9c0);
+      box-shadow: var(--glow-green);
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #6b1a1a, #a1260d);
+      border-color: rgba(255, 84, 112, 0.4);
+    }
+
+    button.danger:hover:not(:disabled) {
+      background: linear-gradient(135deg, #a1260d, #c42b1c);
+      box-shadow: 0 0 10px rgba(255, 84, 112, 0.5), 0 0 20px rgba(255, 84, 112, 0.3);
+    }
+
+    .log-area {
+      width: 100%;
+      height: 200px;
+      background: rgba(0, 15, 30, 0.6);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.05);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+
+    .col-stack {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 16px;
+    }
+
+    .preset-list {
+      margin-top: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 6px;
+      background: rgba(0, 15, 30, 0.3);
+      box-shadow: inset 0 0 15px rgba(0, 212, 255, 0.03);
+    }
+
+    .preset-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+      font-size: 12px;
+      font-family: "Consolas", monospace;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .preset-item:last-child {
+      border-bottom: none;
+    }
+
+    .preset-item:hover {
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    .preset-item .pname {
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+      min-width: 110px;
+      font-family: "Segoe UI", sans-serif;
+      font-weight: 500;
+    }
+
+    .preset-item .phex {
+      color: var(--accent-green);
+      flex: 1;
+      text-shadow: 0 0 5px rgba(52, 255, 200, 0.2);
+    }
+
+    .preset-item .pbtn {
+      background: linear-gradient(135deg, #0a4a6b, #0e639c);
+      border: 1px solid rgba(0, 212, 255, 0.4);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-item .pbtn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #0e639c, #1177bb);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .preset-item .pbtn:disabled {
+      background: rgba(30, 40, 60, 0.5);
+      color: var(--text-muted);
+      border-color: rgba(100, 120, 150, 0.3);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .log-line-rx {
+      color: #00ff88;
+      text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+    }
+
+    .log-line-tx {
+      color: #4da6ff;
+      text-shadow: 0 0 5px rgba(77, 166, 255, 0.3);
+    }
+
+    .log-line-info {
+      color: var(--accent-orange);
+      text-shadow: 0 0 5px rgba(255, 159, 67, 0.3);
+    }
+
+    .log-line-err {
+      color: var(--accent-red);
+      text-shadow: 0 0 5px rgba(255, 84, 112, 0.4);
+    }
+
+    .timestamp {
+      color: var(--accent-purple);
+      margin-right: 6px;
+      opacity: 0.9;
+    }
+
+    textarea.input-area {
+      width: 100%;
+      height: 80px;
+      resize: vertical;
+      font-family: "Consolas", "Courier New", monospace;
+    }
+
+    .status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      margin-right: 8px;
+      vertical-align: middle;
+      box-shadow: 0 0 8px rgba(100, 120, 150, 0.5);
+    }
+
+    .status.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 12px var(--accent-green), 0 0 20px rgba(52, 255, 200, 0.5);
+    }
+
+    .status.error {
+      background: var(--accent-red);
+      box-shadow: 0 0 12px var(--accent-red);
+    }
+
+    .checkbox-group {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      min-width: auto;
+      cursor: pointer;
+      gap: 6px;
+    }
+
+    .checkbox-group input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--accent-cyan);
+    }
+
+    .status-bar {
+      font-size: 12px;
+      color: var(--accent-cyan);
+      padding-top: 10px;
+      border-top: 1px solid rgba(0, 212, 255, 0.15);
+      margin-top: 8px;
+      font-family: "Consolas", monospace;
+      letter-spacing: 0.5px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: "Consolas", monospace;
+    }
+
+    .stats b {
+      color: var(--accent-cyan);
+      font-weight: 600;
+      text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+    }
+
+    .quick-cmds {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .quick-cmds button {
+      background: rgba(0, 20, 40, 0.6);
+      border-color: rgba(0, 212, 255, 0.3);
+      font-size: 12px;
+      padding: 4px 10px;
+    }
+
+    .quick-cmds button:hover:not(:disabled) {
+      background: rgba(14, 99, 156, 0.6);
+      box-shadow: var(--glow-cyan);
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 15, 30, 0.4);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(168, 85, 247, 0.3));
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.5), rgba(168, 85, 247, 0.5));
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    }
+
+    /* ====== 动画定义 ====== */
+    @keyframes gradientShift {
+
+      0%,
+      100% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.25);
+        opacity: 0.85;
+      }
+    }
+
+    @keyframes glow {
+
+      0%,
+      100% {
+        text-shadow: 0 0 5px rgba(78, 201, 176, 0.3), 0 0 10px rgba(78, 201, 176, 0.2);
+      }
+
+      50% {
+        text-shadow: 0 0 10px rgba(78, 201, 176, 0.6), 0 0 20px rgba(78, 201, 176, 0.4), 0 0 30px rgba(78, 201, 176, 0.2);
+      }
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    @keyframes rxHighlight {
+      0% {
+        background: rgba(52, 255, 200, 0.15);
+      }
+
+      100% {
+        background: transparent;
+      }
+    }
+
+    @keyframes txHighlight {
+      0% {
+        background: rgba(0, 212, 255, 0.15);
+      }
+
+      100% {
+        background: transparent;
+      }
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+
+      70% {
+        transform: scale(0.9);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes dataFlow {
+      0% {
+        box-shadow: inset 0 0 0 0 rgba(0, 212, 255, 0.4);
+      }
+
+      50% {
+        box-shadow: inset 0 0 15px 3px rgba(0, 212, 255, 0.2);
+      }
+
+      100% {
+        box-shadow: inset 0 0 0 0 rgba(0, 212, 255, 0.4);
+      }
+    }
+
+    @keyframes floatGradient {
+
+      0%,
+      100% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+
+    /* ====== 页面入场动画 ====== */
+    .panel {
+      animation: fadeInUp 0.6s ease-out both;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+
+    .panel:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15), 0 0 0 1px rgba(0, 212, 255, 0.1);
+      border-color: rgba(0, 212, 255, 0.35);
+    }
+
+    .panel:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .col-stack .panel:first-child {
+      animation-delay: 0.2s;
+    }
+
+    .col-stack .panel:nth-child(2) {
+      animation-delay: 0.3s;
+    }
+
+    .two-col>.panel:last-child {
+      animation-delay: 0.4s;
+    }
+
+    /* ====== 标题动画 ====== */
+    /* ====== 状态指示灯呼吸动画 ====== */
+    .status.connected {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    /* ====== 按钮交互动画 ====== */
+    button {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    /* ====== 面板标题装饰 ====== */
+    .panel-title {
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    .panel-title::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 0;
+      background: linear-gradient(to bottom, var(--accent-cyan), var(--accent-purple));
+      border-radius: 2px;
+      transition: height 0.3s ease;
+    }
+
+    .panel:hover .panel-title::before {
+      height: 100%;
+    }
+
+    .panel:hover .panel-title {
+      color: var(--accent-cyan);
+      text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+    }
+
+    /* ====== 输入框动画 ====== */
+    select,
+    input,
+    textarea {
+      transition: all 0.2s ease;
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2), inset 0 0 10px rgba(0, 212, 255, 0.1);
+    }
+
+    textarea.input-area:focus {
+      animation: dataFlow 1.5s ease-in-out infinite;
+    }
+
+    /* ====== 日志区域新数据高亮 ====== */
+    .log-line-rx,
+    .log-line-tx,
+    .log-line-info,
+    .log-line-err {
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    /* ====== 预设项目动画 ====== */
+    .preset-item {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: slideInRight 0.4s ease-out both;
+    }
+
+    .preset-item:nth-child(1) {
+      animation-delay: 0.45s;
+    }
+
+    .preset-item:nth-child(2) {
+      animation-delay: 0.50s;
+    }
+
+    .preset-item:nth-child(3) {
+      animation-delay: 0.55s;
+    }
+
+    .preset-item:nth-child(4) {
+      animation-delay: 0.60s;
+    }
+
+    .preset-item:nth-child(5) {
+      animation-delay: 0.65s;
+    }
+
+    .preset-item:nth-child(6) {
+      animation-delay: 0.70s;
+    }
+
+    .preset-item:nth-child(7) {
+      animation-delay: 0.75s;
+    }
+
+    .preset-item:nth-child(8) {
+      animation-delay: 0.80s;
+    }
+
+    .preset-item:nth-child(9) {
+      animation-delay: 0.85s;
+    }
+
+    .preset-item:nth-child(10) {
+      animation-delay: 0.90s;
+    }
+
+    .preset-item:nth-child(11) {
+      animation-delay: 0.95s;
+    }
+
+    .preset-item:nth-child(12) {
+      animation-delay: 1.00s;
+    }
+
+    .preset-item:nth-child(13) {
+      animation-delay: 1.05s;
+    }
+
+    .preset-item:nth-child(14) {
+      animation-delay: 1.10s;
+    }
+
+    .preset-item:nth-child(15) {
+      animation-delay: 1.15s;
+    }
+
+    .preset-item:nth-child(16) {
+      animation-delay: 1.20s;
+    }
+
+    .preset-item:nth-child(17) {
+      animation-delay: 1.25s;
+    }
+
+    .preset-item:nth-child(18) {
+      animation-delay: 1.30s;
+    }
+
+    .preset-item:nth-child(19) {
+      animation-delay: 1.35s;
+    }
+
+    .preset-item:nth-child(20) {
+      animation-delay: 1.40s;
+    }
+
+    .preset-item:hover {
+      padding-left: 14px;
+      border-left: 3px solid #4ec9b0;
+      background: #2d2d30;
+    }
+
+    .preset-item .pbtn {
+      transition: all 0.2s ease;
+    }
+
+    .preset-item .pbtn:hover:not(:disabled) {
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(14, 99, 156, 0.4);
+    }
+
+    /* ====== 设备地址/类型显示框动画 ====== */
+    #slaveAddrDisplay,
+    #deviceTypeDisplay,
+    #statusIndicator {
+      transition: all 0.3s ease;
+    }
+
+    #slaveAddrDisplay:hover,
+    #deviceTypeDisplay:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(78, 201, 176, 0.3);
+    }
+
+    #statusIndicator {
+      transition: all 0.3s ease;
+    }
+
+    /* ====== 状态栏 ====== */
+    .status-bar {
+      transition: color 0.3s ease;
+    }
+
+    /* ====== 滚动条美化 ====== */
+    ::-webkit-scrollbar {
+      transition: all 0.3s ease;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      transition: background 0.3s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4ec9b0;
+    }
+
+    /* ====== 复选框美化 ====== */
+    .checkbox-group input[type="checkbox"] {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-group input[type="checkbox"]:hover {
+      box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.3);
+    }
+
+    .checkbox-group input[type="checkbox"]:checked {
+      accent-color: #4ec9b0;
+    }
+
+    /* ====== 计数器动画 ====== */
+    .stats b {
+      color: #4ec9b0;
+      font-family: "Consolas", monospace;
+      transition: color 0.3s ease;
+    }
+
+    /* ====== 标签动画 ====== */
+    label {
+      transition: color 0.2s ease;
+    }
+
+    .row:hover label {
+      color: #9cdcfe;
+    }
+
+    /* ====== 设备类型区域（右侧列，上下堆叠） ====== */
+    .device-section {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 16px;
+    }
+
+    /* ====== 设备类型矩阵装饰区（缩小版） ====== */
+    .tech-deco {
+      position: relative;
+      background: var(--bg-panel);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .tech-deco::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+      opacity: 0.6;
+    }
+
+    .tech-deco::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .tech-deco-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .tech-deco-title {
+      color: var(--accent-cyan);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      position: relative;
+      padding-left: 0;
+    }
+
+    .tech-deco-title::after {
+      content: "";
+      display: block;
+      margin-top: 4px;
+      width: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+      box-shadow: var(--glow-cyan);
+    }
+
+    .tech-deco-info {
+      color: var(--text-secondary);
+      font-size: 10px;
+      margin-left: auto;
+      opacity: 0.75;
+      font-family: "Consolas", monospace;
+      white-space: nowrap;
+    }
+
+    .deco-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .deco-item {
+      position: relative;
+      padding: 6px 4px;
+      background: linear-gradient(135deg, rgba(10, 15, 25, 0.6) 0%, rgba(15, 20, 35, 0.4) 100%);
+      border: 1px solid rgba(0, 212, 255, 0.12);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: default;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .deco-item::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, transparent, transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .deco-item::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.08) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .deco-item:hover {
+      border-color: rgba(0, 212, 255, 0.4);
+      transform: translateY(-1px);
+      background: linear-gradient(135deg, rgba(15, 25, 40, 0.7) 0%, rgba(20, 30, 50, 0.5) 100%);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .deco-item:hover::after {
+      opacity: 1;
+    }
+
+    .deco-item:hover::before {
+      opacity: 1;
+    }
+
+    .deco-icon {
+      width: 20px;
+      height: 20px;
+      margin-bottom: 4px;
+      display: block;
+      filter: drop-shadow(0 0 4px rgba(52, 255, 200, 0.25));
+      transition: filter 0.3s ease;
+    }
+
+    .deco-item:hover .deco-icon {
+      filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.5));
+    }
+
+    .deco-item.active {
+      border-color: var(--accent-cyan);
+      background: linear-gradient(135deg, rgba(0, 40, 60, 0.85) 0%, rgba(15, 25, 50, 0.7) 100%);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.35), inset 0 0 8px rgba(0, 212, 255, 0.15);
+      transform: translateY(-1px);
+      animation: decoBreathing 1.8s ease-in-out infinite;
+    }
+
+    .deco-item.active::before {
+      opacity: 1;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    }
+
+    .deco-item.active::after {
+      opacity: 1;
+      background: radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.25) 0%, transparent 70%);
+    }
+
+    .deco-item.active .deco-icon {
+      filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.85));
+    }
+
+    @keyframes decoBreathing {
+
+      0%,
+      100% {
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.25), inset 0 0 6px rgba(0, 212, 255, 0.1);
+      }
+
+      50% {
+        box-shadow: 0 0 18px rgba(0, 212, 255, 0.6), inset 0 0 12px rgba(0, 212, 255, 0.25);
+      }
+    }
+
+    .deco-name {
+      font-size: 9px;
+      color: var(--text-primary);
+      font-weight: 500;
+      margin-bottom: 2px;
+      letter-spacing: 0.3px;
+      line-height: 1.1;
+    }
+
+    .deco-code {
+      font-size: 8px;
+      color: var(--accent-green);
+      font-family: "Consolas", monospace;
+      text-shadow: 0 0 3px rgba(52, 255, 200, 0.25);
+      letter-spacing: 0.3px;
+    }
+
+    /* ====== 信息流装饰 ====== */
+    .tech-flow {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .tech-flow::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, var(--accent-cyan) 50%, transparent 100%);
+      opacity: 0.3;
+    }
+
+    .tech-flow::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -50%;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6) 25%, var(--accent-cyan) 50%, rgba(255, 255, 255, 0.6) 75%, transparent);
+      animation: flowMove 3s linear infinite;
+    }
+
+    @keyframes flowMove {
+      0% {
+        left: -100%;
+      }
+
+      100% {
+        left: 100%;
+      }
+    }
+
+    /* ====== 状态指示器（缩小版） ====== */
+    .deco-status {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(0, 212, 255, 0.15);
+      position: relative;
+      z-index: 2;
+    }
+
+    .deco-status-label {
+      font-size: 9px;
+      color: var(--text-secondary);
+      font-family: "Consolas", monospace;
+      letter-spacing: 1px;
+    }
+
+    .deco-status-dots {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .deco-status-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+      opacity: 0.8;
+    }
+
+    .deco-status-dot:nth-child(2) {
+      animation: pulseDot 1.5s ease-in-out infinite;
+      animation-delay: 0.3s;
+    }
+
+    .deco-status-dot:nth-child(3) {
+      animation: pulseDot 1.5s ease-in-out infinite;
+      animation-delay: 0.6s;
+    }
+
+    .deco-status-dot:nth-child(4) {
+      animation: pulseDot 1.5s ease-in-out infinite;
+      animation-delay: 0.9s;
+    }
+
+    @keyframes pulseDot {
+
+      0%,
+      100% {
+        opacity: 0.4;
+        transform: scale(0.8);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+    }
+
+    .deco-stats {
+      display: flex;
+      gap: 14px;
+      margin-left: auto;
+      font-size: 9px;
+      color: var(--text-secondary);
+      font-family: "Consolas", monospace;
+    }
+
+    .deco-stat b {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="company-header">
+      <div class="company-brand">
+        <svg class="company-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+              <stop offset="50%" style="stop-color:#34ffc8;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="stemGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:1" />
+            </linearGradient>
+            <filter id="glowFilter">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="url(#leafGrad)" stroke-width="2.5" opacity="0.3" />
+          <circle cx="50" cy="50" r="36" fill="none" stroke="url(#leafGrad)" stroke-width="1.5" stroke-dasharray="4,3"
+            opacity="0.5" />
+          <path d="M50 78 L50 52" stroke="url(#stemGrad)" stroke-width="4" stroke-linecap="round"
+            filter="url(#glowFilter)" />
+          <path d="M50 52 Q32 38 32 22 Q42 18 50 36" fill="url(#leafGrad)" filter="url(#glowFilter)" opacity="0.95" />
+          <path d="M50 52 Q68 38 68 22 Q58 18 50 36" fill="url(#leafGrad)" filter="url(#glowFilter)" opacity="0.95" />
+          <path d="M50 62 Q38 56 32 48" stroke="url(#stemGrad)" stroke-width="2" fill="none" stroke-linecap="round" />
+          <path d="M50 62 Q62 56 68 48" stroke="url(#stemGrad)" stroke-width="2" fill="none" stroke-linecap="round" />
+          <circle cx="50" cy="52" r="3" fill="#34ffc8" filter="url(#glowFilter)" />
+          <circle cx="50" cy="50" r="48" fill="none" stroke="#00d4ff" stroke-width="0.5" stroke-dasharray="2,4"
+            opacity="0.4">
+            <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="30s"
+              repeatCount="indefinite" />
+          </circle>
+        </svg>
+        <div class="company-text">
+          <div class="company-name">
+            <span class="company-name-main">Babala</span>
+            <span class="company-name-sub">(Xiamen) Agri-Tech Co., Ltd.</span>
+          </div>
+          <div class="company-tagline">
+            <svg class="tagline-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+              <path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20" stroke="currentColor" stroke-width="1.5"
+                opacity="0.7" />
+            </svg>
+            Hydroponics &amp; Smart Agriculture Solutions
+            <span class="divider-dot">●</span>
+            <svg class="tagline-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C8 8 6 12 6 16a6 6 0 0 0 12 0c0-4-2-8-6-14z" stroke="currentColor" stroke-width="1.5"
+                opacity="0.9" />
+            </svg>
+            Professional Equipment Manufacturer
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-title-bar">
+      <div class="title-left">
+        <span class="status" id="statusDot"></span>
+        <h1>AC Station 配置工具</h1>
+      </div>
+      <div class="title-right">
+        <div class="product-inline-card">
+          <div class="product-inline-glow"></div>
+          <svg class="product-inline-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="pbFront" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#3a3a40" />
+                <stop offset="40%" style="stop-color:#232329" />
+                <stop offset="100%" style="stop-color:#1b1b20" />
+              </linearGradient>
+              <linearGradient id="pbTopG" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#4a4a52" />
+                <stop offset="100%" style="stop-color:#282830" />
+              </linearGradient>
+              <linearGradient id="pbSlotD" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#0d0d10" />
+                <stop offset="100%" style="stop-color:#000000" />
+              </linearGradient>
+              <radialGradient id="pbLedG">
+                <stop offset="0%" style="stop-color:#34ffc8;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#34ffc8;stop-opacity:0" />
+              </radialGradient>
+            </defs>
+            <ellipse cx="100" cy="194" rx="65" ry="5" fill="#000" opacity="0.3" />
+            <path
+              d="M50 66 L50 188 Q50 196 60 196 L140 196 Q150 196 150 188 L150 66 Q150 58 140 58 L60 58 Q50 58 50 66 Z"
+              fill="url(#pbFront)" stroke="#000" stroke-width="0.6" />
+            <path d="M50 66 Q50 58 60 58 L140 58 Q150 58 150 66 Q150 66 150 76 Q150 80 136 80 L64 80 Q50 80 50 76 Z"
+              fill="url(#pbTopG)" stroke="#000" stroke-width="0.3" opacity="0.9" />
+            <path d="M52 188 L52 196 L148 196 L148 188" fill="none" stroke="#000" stroke-width="0.5" opacity="0.6" />
+            <text x="100" y="73" font-size="10" text-anchor="middle" fill="#c0c0c5" opacity="0.9"
+              font-family="Arial, Helvetica, sans-serif" font-weight="700" letter-spacing="2">AC Station</text>
+            <rect x="80" y="108" width="9" height="30" rx="1.5" fill="url(#pbSlotD)" stroke="#000" stroke-width="0.3" />
+            <rect x="111" y="108" width="9" height="30" rx="1.5" fill="url(#pbSlotD)" stroke="#000"
+              stroke-width="0.3" />
+            <path d="M95 158 L95 170 Q100 178 105 170 L105 158 Q100 150 95 158 Z" fill="url(#pbSlotD)" stroke="#000"
+              stroke-width="0.3" />
+            <ellipse cx="100" cy="164" rx="5" ry="5" fill="#08080b" opacity="0.5" />
+            <circle cx="132" cy="164" r="6" fill="#161619" stroke="#000" stroke-width="0.3" />
+            <circle cx="132" cy="164" r="4" fill="#08080b" />
+            <circle cx="132" cy="164" r="2.4" fill="#34ffc8">
+              <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="132" cy="164" r="5" fill="url(#pbLedG)" opacity="0.6">
+              <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <rect x="44" y="112" width="4" height="10" rx="1" fill="#1e1e22" opacity="0.85" />
+          </svg>
+          <div class="product-inline-label">
+            <span class="p-dot"></span>
+            <span>AC Station</span>
+          </div>
+        </div>
+        <span class="version-badge">v1.0</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">连接设置</div>
+      <div class="row">
+        <div class="field-group">
+          <label>波特率:</label>
+          <select id="baudRate" style="min-width:110px;">
+            <option selected>9600</option>
+            <option>19200</option>
+            <option>38400</option>
+            <option>115200</option>
+            <option>230400</option>
+            <option>460800</option>
+            <option>921600</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>数据位:</label>
+          <div class="btn-group" data-group="dataBits">
+            <button type="button" class="btn-option" data-value="7">7</button>
+            <button type="button" class="btn-option active" data-value="8">8</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>停止位:</label>
+          <div class="btn-group" data-group="stopBits">
+            <button type="button" class="btn-option active" data-value="1">1</button>
+            <button type="button" class="btn-option" data-value="2">2</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>校验:</label>
+          <div class="btn-group" data-group="parity">
+            <button type="button" class="btn-option active" data-value="none">无</button>
+            <button type="button" class="btn-option" data-value="even">偶</button>
+            <button type="button" class="btn-option" data-value="odd">奇</button>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:4px;" id="portQuickArea">
+        <div id="portQuickList" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"></div>
+        <button id="btnConnect" class="success" style="padding:7px 20px;font-weight:bold;">连接串口</button>
+        <button id="btnDisconnect" class="danger" disabled style="padding:7px 20px;">断开</button>
+      </div>
+      <input type="hidden" id="dataBits" value="8">
+      <input type="hidden" id="stopBits" value="1">
+      <input type="hidden" id="parity" value="none">
+      <div class="row" style="margin-top:8px;">
+        <div class="field-group">
+          <label>设备新地址:</label>
+          <input type="text" id="regNewAddr" value="1C"
+            style="width:60px; background:rgba(0,20,40,0.6); border:1px solid rgba(0,212,255,0.3); color:var(--accent-cyan); font-family:Consolas,monospace; border-radius:6px; text-transform:uppercase; text-align:center;"
+            placeholder="1C">
+        </div>
+        <button id="btnRegReply" style="padding:6px 20px; font-size:14px; font-weight:bold;">测试</button>
+        <span id="regReplyInfo" style="color:var(--text-muted); font-size:12px; font-family:Consolas,monospace;"></span>
+      </div>
+      <div class="status-bar" id="statusText">状态: 未连接 | 请使用 Chrome/Edge 浏览器</div>
+      <div class="row" style="margin-top:8px;">
+        <div class="field-group">
+          <label>当前设备地址:</label>
+          <span id="slaveAddrDisplay"
+            style="color:var(--accent-cyan);font-family:Consolas,monospace;font-weight:bold;padding:4px 10px;min-width:46px;display:inline-block;text-align:center;text-shadow:0 0 6px rgba(0,212,255,0.4);background:none;border:none;box-shadow:none;">--</span>
+        </div>
+        <div class="field-group">
+          <label>设备类型:</label>
+          <span id="deviceTypeDisplay"
+            style="color:var(--accent-purple);font-family:Consolas,monospace;font-weight:bold;min-width:120px;display:inline-flex;align-items:center;gap:8px;text-align:center;text-shadow:0 0 6px rgba(168,85,247,0.4);background:none;border:none;box-shadow:none;">
+            <span id="deviceTypeIcon" style="display:inline-block;width:18px;height:18px;flex-shrink:0;"></span>
+            <span id="deviceTypeText">--</span>
+          </span>
+        </div>
+        <span id="statusIndicator"
+          style="padding:5px 14px;border-radius:6px;font-weight:bold;display:inline-block;opacity:0;transition:opacity 0.3s,background 0.3s,color 0.3s,border-color 0.3s;background:rgba(0,20,40,0.6);color:var(--text-muted);border:1px solid rgba(100,120,150,0.3);">等待响应...</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="col-stack">
+        <div class="panel">
+          <div class="panel-title">接收数据</div>
+          <div class="row">
+            <div class="checkbox-group">
+              <label><input type="checkbox" id="showTimestamp" checked>时间戳</label>
+              <label><input type="checkbox" id="rxHex" checked>HEX显示</label>
+              <label><input type="checkbox" id="autoscroll" checked>自动滚动</label>
+            </div>
+            <button id="btnClear">清空</button>
+          </div>
+          <div class="log-area" id="logArea"></div>
+          <div class="stats" style="margin-top:8px;">
+            <span>接收: <b id="rxBytes">0</b> 字节</span>
+            <span>发送: <b id="txBytes">0</b> 字节</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">发送数据</div>
+          <textarea id="inputArea" class="input-area"
+            placeholder="输入十六进制（如：01 03 00 00 00 0A），将自动追加 Modbus CRC16"></textarea>
+          <div class="row" style="margin-top:6px;">
+            <label>CRC16:</label>
+            <span id="crcDisplay" style="color:#4ec9b0; font-family:Consolas,monospace;">-- --</span>
+            <button id="btnSend" style="margin-left:auto;">发送</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="device-section">
+        <div class="panel">
+          <div class="panel-title">设备类型设置</div>
+          <div class="preset-list" id="deviceTypeList"></div>
+        </div>
+
+        <div class="tech-deco">
+          <div class="tech-deco-header">
+            <div class="tech-deco-title">设备类型矩阵 · Device Type Matrix</div>
+            <div class="tech-deco-info">
+              <span style="color: var(--accent-green);">◉</span> 20 Types
+            </div>
+          </div>
+          <div class="deco-grid" id="decoGrid"></div>
+          <div class="tech-flow"></div>
+          <div class="deco-status">
+            <span class="deco-status-label">STATUS</span>
+            <div class="deco-status-dots">
+              <div class="deco-status-dot"
+                style="background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green);"></div>
+              <div class="deco-status-dot"
+                style="background: var(--accent-cyan); box-shadow: 0 0 6px var(--accent-cyan);"></div>
+              <div class="deco-status-dot"
+                style="background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green);"></div>
+              <div class="deco-status-dot"
+                style="background: var(--accent-cyan); box-shadow: 0 0 6px var(--accent-cyan);"></div>
+            </div>
+            <div class="deco-stats">
+              <div class="deco-stat">设备 <b>20</b></div>
+              <div class="deco-stat"><b>RTU</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      if (!("serial" in navigator)) {
+        document.getElementById("statusText").innerHTML = "状态: 错误 - 当前浏览器不支持 Web Serial API，请使用 Chrome 89+ 或 Edge 89+";
+        document.getElementById("statusDot").className = "status error";
+        document.getElementById("btnConnect").disabled = true;
+      }
+
+      document.querySelectorAll(".btn-group").forEach(function (group) {
+        const fieldId = group.dataset.group;
+        const hidden = document.getElementById(fieldId);
+        group.querySelectorAll(".btn-option").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            group.querySelectorAll(".btn-option").forEach(function (b) { b.classList.remove("active"); });
+            btn.classList.add("active");
+            if (hidden) hidden.value = btn.dataset.value;
+          });
+        });
+      });
+
+      let port = null;
+      let reader = null;
+      let writer = null;
+      let reading = false;
+      let rxBytes = 0, txBytes = 0;
+      let rxBuf = new Uint8Array(0);
+      let lastRegPacket = null;
+      let echoAwaitTarget = null;
+      let echoAwaitResolve = null;
+      let echoAwaitTimeout = null;
+      let connectedPortInfo = null;
+      let savedPorts = JSON.parse(localStorage.getItem("savedPorts") || "[]");
+
+      function getPortKey(p) {
+        return p.getInfo ? (p.getInfo().then ? null : p.getInfo().usbVendorId + ":" + p.getInfo().usbProductId) : null;
+      }
+
+      const vendorMap = {
+        1027: "FTDI",
+        4292: "Silicon Labs",
+        1659: "Prolific",
+        6790: "Linux Foundation",
+        3368: "Microchip",
+        1155: "STMicroelectronics",
+        2341: "Arduino",
+        7511: "Texas Instruments",
+        1415: "Apple",
+        1137: "Belkin",
+        5426: "CP210x",
+        1240: "SparkFun",
+        9025: "Adafruit",
+        2638: "Digilent"
+      };
+
+      function getPortLabel(info) {
+        if (info.serialNumber) {
+          return info.serialNumber.length <= 12 ? info.serialNumber : info.serialNumber.slice(-8);
+        }
+        const vendor = vendorMap[info.usbVendorId] || ("VID_" + info.usbVendorId.toString(16).toUpperCase().padStart(4, "0"));
+        const pid = info.usbProductId.toString(16).toUpperCase().padStart(4, "0");
+        return vendor + " " + pid;
+      }
+
+      async function loadSavedPorts() {
+        if (!("serial" in navigator)) return;
+        try {
+          const ports = await navigator.serial.getPorts();
+          const quickList = $("portQuickList");
+          if (!quickList) return;
+          quickList.innerHTML = "";
+          if (ports.length > 0) {
+            ports.forEach(function (p) {
+              const info = p.getInfo();
+              const key = info.usbVendorId + ":" + info.usbProductId;
+              const label = getPortLabel(info);
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "btn-option";
+              btn.style.minWidth = "100px";
+              btn.textContent = label;
+              btn.dataset.portKey = key;
+              btn.addEventListener("click", function () { quickConnect(p, label); });
+              quickList.appendChild(btn);
+            });
+          } else {
+            const empty = document.createElement("span");
+            empty.style.cssText = "font-size:12px;color:var(--text-muted);padding:0 4px;";
+            empty.textContent = "未发现已授权端口，请点击「连接串口」选择";
+            quickList.appendChild(empty);
+          }
+        } catch (e) {
+          console.warn("getPorts error:", e);
+        }
+      }
+
+      async function quickConnect(portRef, label) {
+        if (port && port.readable) { await disconnect(); }
+        try {
+          const opts = {
+            baudRate: parseInt($("baudRate").value),
+            dataBits: parseInt(document.querySelector('.btn-group[data-group="dataBits"] .btn-option.active').dataset.value),
+            stopBits: parseInt(document.querySelector('.btn-group[data-group="stopBits"] .btn-option.active').dataset.value),
+            parity: document.querySelector('.btn-group[data-group="parity"] .btn-option.active').dataset.value,
+            bufferSize: 4096,
+            flowControl: "none"
+          };
+          port = portRef;
+          connectedPortInfo = label || port.getInfo().usbVendorId + ":" + port.getInfo().usbProductId;
+          await port.open(opts);
+          writer = port.writable.getWriter();
+          const parityMap = { none: "无", even: "偶", odd: "奇" };
+          updateStatus(true, `${opts.baudRate} ${opts.dataBits}${parityMap[opts.parity] || opts.parity}${opts.stopBits}`);
+          log("快速连接成功: " + connectedPortInfo, "info");
+          readLoop();
+        } catch (err) {
+          log("连接失败: " + err.message, "err");
+          port = null;
+          connectedPortInfo = null;
+        }
+      }
+
+      function cancelEchoAwait() {
+        if (echoAwaitTimeout) { clearTimeout(echoAwaitTimeout); echoAwaitTimeout = null; }
+        echoAwaitTarget = null;
+        if (echoAwaitResolve) { const r = echoAwaitResolve; echoAwaitResolve = null; r(false); }
+      }
+      let rxTimer = null;
+      let currentSlaveAddr = null;
+      let currentDeviceType = null;
+      let lastSentBytes = null;
+      let lastSentTime = 0;
+      let successTimer = null;
+
+      const deviceTypes = [
+        { name: "CO2", type: 0x41 },
+        { name: "加热", type: 0x42 },
+        { name: "加湿", type: 0x43 },
+        { name: "除湿", type: 0x44 },
+        { name: "降温", type: 0x45 },
+        { name: "排气风扇", type: 0x46 },
+        { name: "进气风扇", type: 0x47 },
+        { name: "灯光开关", type: 0x48 },
+        { name: "灌溉类设备", type: 0x49 },
+        { name: "CO2 down", type: 0x4A },
+        { name: "泵", type: 0x4B },
+        { name: "搅拌装置", type: 0x4C },
+        { name: "新风-排废气", type: 0x4D },
+        { name: "新风-注入新鲜空气", type: 0x4E },
+        { name: "timer", type: 0x4F },
+        { name: "打氧机", type: 0x51 },
+        { name: "水加热设备", type: 0x52 },
+        { name: "水制冷设备", type: 0x53 },
+        { name: "补水设备", type: 0x54 },
+        { name: "水循环设备", type: 0x55 }
+      ];
+
+      const deviceTypeIconSVG = {
+        "CO2": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#00d4ff" stroke-width="1.5"/><text x="12" y="16" text-anchor="middle" fill="#34ffc8" font-size="10" font-weight="600" font-family="Arial">CO₂</text><circle cx="5" cy="7" r="1.2" fill="#00d4ff" opacity="0.6"/><circle cx="19" cy="18" r="0.8" fill="#34ffc8" opacity="0.5"/></svg>',
+        "加热": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L6 12H8V20H16V12H18L12 4Z" stroke="#ff9f43" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255, 159, 67, 0.15)"/><circle cx="12" cy="14" r="1.5" fill="#ff5638"/></svg>',
+        "加湿": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C12 3 5 11 5 16C5 19 8 21 12 21C16 21 19 19 19 16C19 11 12 3 12 3Z" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.15)"/><path d="M8 17C8 19 10 20 12 20" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/></svg>',
+        "除湿": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="5" width="16" height="14" rx="2" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><rect x="7" y="8" width="10" height="8" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><path d="M8 10L16 10M8 13L16 13" stroke="#34ffc8" stroke-width="1" stroke-linecap="round"/></svg>',
+        "降温": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L8 9H11V14H13V9H16L12 4Z" stroke="#34ffc8" stroke-width="1.5" stroke-linejoin="round" fill="rgba(52, 255, 200, 0.15)"/><path d="M7 17L17 17" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><path d="M8 19L16 19" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/></svg>',
+        "排气风扇": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.08)"/><path d="M12 3C10 5 10 8 12 9C14 10 16 8 16 6L12 3Z" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.2)"/><path d="M12 3C14 5 14 8 12 9" stroke="#a855f7" stroke-width="1.5"/><circle cx="12" cy="12" r="1.5" fill="#00d4ff"/></svg>',
+        "进气风扇": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.08)"/><path d="M12 12L12 4C12 6 12 10 12 10C14 10 16 8 16 6" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/><path d="M12 12L4 12C6 12 10 12 10 12C10 14 8 16 6 16" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="1.5" fill="#a855f7"/></svg>',
+        "灯光开关": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L9 8H15L12 3Z" stroke="#ff9f43" stroke-width="1.5" fill="rgba(255, 159, 67, 0.2)"/><circle cx="12" cy="14" r="5" stroke="#ff9f43" stroke-width="1.5" fill="rgba(255, 159, 67, 0.1)"/><path d="M10 12L12 10L14 12L12 14L10 12Z" fill="#ff9f43"/><rect x="9" y="19" width="6" height="2" rx="1" stroke="#34ffc8" stroke-width="1.5"/></svg>',
+        "灌溉类设备": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 20L5 15L12 15L12 20Z" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.1)"/><circle cx="8" cy="17" r="1" fill="#34ffc8"/><path d="M14 12L16 8M16 8L18 10M16 8L14 10" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="8" r="1.5" fill="#00d4ff"/></svg>',
+        "CO2 down": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="10" r="7" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><text x="12" y="13" text-anchor="middle" fill="#00d4ff" font-size="8" font-weight="600" font-family="Arial">CO₂</text><path d="M8 20L12 15L16 20" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(52, 255, 200, 0.15)"/></svg>',
+        "泵": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10" width="10" height="10" rx="1" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><circle cx="10" cy="15" r="3" stroke="#34ffc8" stroke-width="1.5"/><path d="M15 12L20 12L20 18L15 18" stroke="#34ffc8" stroke-width="1.5" fill="none"/><path d="M5 10L5 7L10 7" stroke="#00d4ff" stroke-width="1.5"/></svg>',
+        "搅拌装置": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 20L7 8H17L17 20" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.08)"/><circle cx="12" cy="14" r="2" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.15)"/><path d="M9 14L15 14M12 12L12 16" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="6" r="2" fill="#00d4ff"/></svg>',
+        "新风-排废气": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="14" height="14" rx="2" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.08)"/><path d="M9 10L15 10M9 13L15 13" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1 2"/><path d="M17 12L22 12" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/><path d="M20 10L22 12L20 14" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+        "新风-注入新鲜空气": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="14" height="14" rx="2" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><path d="M9 10L15 10M9 13L15 13" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1 2"/><path d="M2 12L7 12" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><path d="M4 10L2 12L4 14" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+        "timer": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.08)"/><path d="M12 8L12 13L16 15" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 3L16 3" stroke="#ff9f43" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="3" r="1" fill="#ff9f43"/></svg>',
+        "打氧机": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 18L19 18L17 6L7 6L5 18Z" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><circle cx="9" cy="14" r="1.2" fill="#00d4ff"/><circle cx="13" cy="12" r="1" fill="#00d4ff" opacity="0.7"/><circle cx="15" cy="15" r="0.8" fill="#34ffc8" opacity="0.6"/><path d="M10 6L10 2L14 2L14 6" stroke="#34ffc8" stroke-width="1.5"/></svg>',
+        "水加热设备": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 4L17 4L17 20L7 20Z" stroke="#ff9f43" stroke-width="1.5" fill="rgba(255, 159, 67, 0.1)"/><path d="M9 14C9 14 10 12 11 14C12 16 13 14 13 14C13 14 14 12 15 14" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="11" cy="9" r="1.5" fill="#ff5638"/><circle cx="14" cy="9" r="1.5" fill="#ff5638"/></svg>',
+        "水制冷设备": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="16" rx="1" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><rect x="7" y="6" width="10" height="12" stroke="#34ffc8" stroke-width="1" fill="rgba(52, 255, 200, 0.05)"/><path d="M9 9L15 9M9 12L15 12" stroke="#34ffc8" stroke-width="1" stroke-linecap="round" stroke-dasharray="1 1"/><path d="M12 6L12 2M10 2L14 2" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/></svg>',
+        "补水设备": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 4L16 4L14 20L10 20Z" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><path d="M9 10L10 12L12 9L14 12L15 10" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M12 15L12 18" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/></svg>',
+        "水循环设备": '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C12 3 6 8 6 13C6 16 9 19 12 19C15 19 18 16 18 13C18 8 12 3 12 3Z" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><path d="M9 13C9 15 10 17 12 17C14 17 15 15 15 13" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><path d="M7 5C8 6 9 8 10 9" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/></svg>'
+      };
+
+      function updateDeviceTypeDisplay(typeCode) {
+        const dt = deviceTypes.find(x => x.type === typeCode);
+        const dtText = $("deviceTypeText");
+        const dtIcon = $("deviceTypeIcon");
+        if (dtText) {
+          if (dt) {
+            dtText.textContent = dt.name + " (0x" + typeCode.toString(16).padStart(2, "0").toUpperCase() + ")";
+          } else {
+            dtText.textContent = "未知 (0x" + typeCode.toString(16).padStart(2, "0").toUpperCase() + ")";
+          }
+        }
+        if (dtIcon) {
+          if (dt && deviceTypeIconSVG[dt.name]) {
+            dtIcon.innerHTML = deviceTypeIconSVG[dt.name];
+            dtIcon.style.filter = "drop-shadow(0 0 5px rgba(168,85,247,0.5))";
+          } else {
+            dtIcon.innerHTML = "";
+          }
+        }
+        const dgrid = $("decoGrid");
+        if (dgrid) {
+          dgrid.querySelectorAll(".deco-item").forEach(el => el.classList.remove("active"));
+          const hex = "0x" + typeCode.toString(16).toUpperCase().padStart(2, "0");
+          const match = dgrid.querySelector('.deco-item[data-type="' + hex + '"]');
+          if (match) match.classList.add("active");
+        }
+      }
+
+      function getDeviceTypeHex(typeCode) {
+        const addr = currentSlaveAddr === null ? 0x01 : currentSlaveAddr;
+        const toHex = n => n.toString(16).padStart(2, "0").toUpperCase();
+        return `${toHex(addr)} 06 04 40 00 ${toHex(typeCode)}`;
+      }
+
+      const $ = id => document.getElementById(id);
+      const logArea = $("logArea");
+
+      function ts() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${String(d.getMilliseconds()).padStart(3, "0")}`;
+      }
+
+      function log(msg, type = "info") {
+        const div = document.createElement("div");
+        div.className = "log-line-" + type;
+        if ($("showTimestamp").checked) {
+          const sp = document.createElement("span");
+          sp.className = "timestamp";
+          sp.textContent = "[" + ts() + "]";
+          div.appendChild(sp);
+        }
+        const prefix = type === "tx" ? "TX → " : type === "rx" ? "RX ← " : type === "err" ? "! " : "» ";
+        div.appendChild(document.createTextNode(prefix + msg));
+        logArea.appendChild(div);
+        if ($("autoscroll").checked) logArea.scrollTop = logArea.scrollHeight;
+      }
+
+      function bytesToHex(bytes) {
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+      }
+
+      function bytesEqual(a, b) {
+        if (!a || !b || a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+        return true;
+      }
+
+      function setStatus(text, type) {
+        const el = $("statusIndicator");
+        if (!el) return;
+        el.textContent = text;
+        el.style.opacity = "1";
+        if (type === "success") {
+          el.style.background = "#1e7e34";
+          el.style.color = "#ffffff";
+          el.style.border = "1px solid #28a745";
+        } else if (type === "waiting") {
+          el.style.background = "#2d2d30";
+          el.style.color = "#f0ad4e";
+          el.style.border = "1px solid #f0ad4e";
+        } else {
+          el.style.background = "#2d2d30";
+          el.style.color = "#808080";
+          el.style.border = "1px solid #3c3c3c";
+        }
+      }
+
+      function clearStatusAfter(ms) {
+        if (successTimer) clearTimeout(successTimer);
+        successTimer = setTimeout(() => {
+          setStatus("等待响应...", "idle");
+          const el = $("statusIndicator");
+          if (el) el.style.opacity = "0";
+        }, ms);
+      }
+
+      function hexToBytes(str) {
+        const clean = str.replace(/\s+/g, "").replace(/0x/gi, "");
+        if (clean.length % 2 !== 0) throw new Error("HEX长度必须为偶数");
+        if (!/^[0-9a-fA-F]*$/.test(clean)) throw new Error("包含非HEX字符");
+        const bytes = new Uint8Array(clean.length / 2);
+        for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(clean.substr(i * 2, 2), 16);
+        return bytes;
+      }
+
+      function modbusCRC16(bytes) {
+        let crc = 0xFFFF;
+        for (let i = 0; i < bytes.length; i++) {
+          crc ^= bytes[i] & 0xFF;
+          for (let j = 0; j < 8; j++) {
+            if (crc & 0x0001) {
+              crc = (crc >>> 1) ^ 0xA001;
+            } else {
+              crc = crc >>> 1;
+            }
+          }
+        }
+        return [(crc & 0xFF), ((crc >>> 8) & 0xFF)];
+      }
+
+      function updateStatus(connected, info) {
+        $("statusDot").className = "status" + (connected ? " connected" : "");
+        $("statusText").textContent = "状态: " + (connected ? ("已连接 - " + info) : "未连接");
+        $("btnConnect").disabled = connected;
+        $("btnDisconnect").disabled = !connected;
+        $("btnSend").disabled = !connected;
+        $("btnRegReply").disabled = !connected;
+        document.querySelectorAll(".pbtn").forEach(b => b.disabled = !connected);
+      }
+
+      async function connect() {
+        try {
+          port = await navigator.serial.requestPort();
+          const info = port.getInfo();
+          connectedPortInfo = getPortLabel(info);
+          const opts = {
+            baudRate: parseInt($("baudRate").value),
+            dataBits: parseInt(document.querySelector('.btn-group[data-group="dataBits"] .btn-option.active').dataset.value),
+            stopBits: parseInt(document.querySelector('.btn-group[data-group="stopBits"] .btn-option.active').dataset.value),
+            parity: document.querySelector('.btn-group[data-group="parity"] .btn-option.active').dataset.value,
+            bufferSize: 4096,
+            flowControl: "none"
+          };
+          await port.open(opts);
+          writer = port.writable.getWriter();
+          const parityMap = { none: "无", even: "偶", odd: "奇" };
+          updateStatus(true, `${opts.baudRate} ${opts.dataBits}${parityMap[opts.parity] || opts.parity}${opts.stopBits}`);
+          log("串口打开成功", "info");
+          readLoop();
+          loadSavedPorts();
+        } catch (err) {
+          log("连接失败: " + err.message, "err");
+        }
+      }
+
+      function appendToRxBuf(chunk) {
+        const merged = new Uint8Array(rxBuf.length + chunk.length);
+        merged.set(rxBuf, 0);
+        merged.set(chunk, rxBuf.length);
+        rxBuf = merged;
+      }
+
+      function flushRxAsMessage() {
+        if (rxBuf.length === 0) return;
+        const data = rxBuf;
+        scanEchoInBufWaiter(data);
+        rxBuf = new Uint8Array(0);
+        rxBytes += data.length;
+        $("rxBytes").textContent = rxBytes;
+        if ($("rxHex").checked) {
+          log(bytesToHex(data), "rx");
+        } else {
+          const text = new TextDecoder("utf-8").decode(data);
+          log(text.replace(/\r/g, ""), "rx");
+        }
+      }
+
+      function getSplitByte() {
+        if ($("rxHex").checked) return null;
+        return 0x0A;
+      }
+
+      function applySlaveAddr(hexStr) {
+        if (currentSlaveAddr === null) return hexStr;
+        const parts = hexStr.trim().split(/\s+/);
+        if (parts.length === 0) return hexStr;
+        parts[0] = currentSlaveAddr.toString(16).padStart(2, "0").toUpperCase();
+        return parts.join(" ");
+      }
+
+      function refreshPresetHex() {
+        const addrEl = $("slaveAddrDisplay");
+        if (addrEl) {
+          addrEl.textContent = currentSlaveAddr === null
+            ? "--"
+            : currentSlaveAddr.toString(16).padStart(2, "0").toUpperCase();
+        }
+        if (typeof refreshDeviceTypeHex === "function") refreshDeviceTypeHex();
+      }
+
+      function emitMessage(data) {
+        rxBytes += data.length;
+        $("rxBytes").textContent = rxBytes;
+        if (lastSentBytes && Date.now() - lastSentTime < 3000) {
+          if (bytesEqual(data, lastSentBytes)) {
+            setStatus("✓ 更改成功", "success");
+            lastSentBytes = null;
+            clearStatusAfter(2500);
+          }
+        }
+        if ($("rxHex").checked) {
+          log(bytesToHex(data), "rx");
+        } else {
+          const text = new TextDecoder("utf-8").decode(data);
+          log(text, "rx");
+        }
+      }
+
+      function splitRxBufByByte(splitByte) {
+        let start = 0;
+        const msgs = [];
+        for (let i = 0; i < rxBuf.length; i++) {
+          if (rxBuf[i] === splitByte) {
+            let end = i;
+            if (splitByte === 0x0A && end > 0 && rxBuf[end - 1] === 0x0D) end -= 1;
+            const msg = new Uint8Array(end - start);
+            msg.set(rxBuf.slice(start, end), 0);
+            msgs.push(msg);
+            start = i + 1;
+          }
+        }
+        if (start > 0) {
+          rxBuf = start < rxBuf.length ? rxBuf.slice(start) : new Uint8Array(0);
+          for (const m of msgs) emitMessage(m);
+        }
+      }
+
+      function resetRxTimer() {
+        if (rxTimer) { clearTimeout(rxTimer); rxTimer = null; }
+        rxTimer = setTimeout(() => { rxTimer = null; flushRxAsMessage(); }, 50);
+      }
+
+      function scanAddrInBuf(buf) {
+        if (buf.length < 13) return;
+        let lastMatchStart = -1;
+        for (let i = 0; i <= buf.length - 13; i++) {
+          if (buf[i] === 0xFA && buf[i + 1] === 0x00 && buf[i + 2] === 0x00 &&
+            buf[i + 3] === 0x00 && buf[i + 4] === 0x00 && buf[i + 5] === 0x00 && buf[i + 6] === 0x06) {
+            lastMatchStart = i;
+          }
+        }
+        if (lastMatchStart < 0) return;
+        const addr = buf[lastMatchStart + 7];
+        const dType = buf[lastMatchStart + 8];
+        const packet = new Uint8Array([
+          buf[lastMatchStart], buf[lastMatchStart + 1], buf[lastMatchStart + 2],
+          buf[lastMatchStart + 3], buf[lastMatchStart + 4], buf[lastMatchStart + 5],
+          buf[lastMatchStart + 6], buf[lastMatchStart + 7], buf[lastMatchStart + 8],
+          buf[lastMatchStart + 9], buf[lastMatchStart + 10], buf[lastMatchStart + 11],
+          buf[lastMatchStart + 12]
+        ]);
+        let isNewDevice = false;
+        if (lastRegPacket) {
+          if (packet[9] !== lastRegPacket[9] || packet[10] !== lastRegPacket[10] ||
+            packet[11] !== lastRegPacket[11] || packet[12] !== lastRegPacket[12]) {
+            isNewDevice = true;
+          }
+        } else {
+          isNewDevice = true;
+        }
+        if (isNewDevice) {
+          rxBuf = new Uint8Array(buf.slice(lastMatchStart));
+        }
+        if (addr !== currentSlaveAddr) {
+          currentSlaveAddr = addr;
+          refreshPresetHex();
+        }
+        if (dType !== currentDeviceType) {
+          currentDeviceType = dType;
+          updateDeviceTypeDisplay(dType);
+        }
+        lastRegPacket = packet;
+      }
+
+      function scanEchoInBuf(buf) {
+        if (!lastSentBytes || lastSentBytes.length === 0) return;
+        if (buf.length < lastSentBytes.length) return;
+        const target = lastSentBytes;
+        for (let i = 0; i <= buf.length - target.length; i++) {
+          let match = true;
+          for (let j = 0; j < target.length; j++) {
+            if (buf[i + j] !== target[j]) { match = false; break; }
+          }
+          if (match && Date.now() - lastSentTime < 3000) {
+            setStatus("✓ 更改成功", "success");
+            lastSentBytes = null;
+            clearStatusAfter(2500);
+            return;
+          }
+        }
+      }
+
+      function scanEchoInBufWaiter(buf) {
+        if (!echoAwaitTarget || echoAwaitTarget.length === 0 || !echoAwaitResolve) return;
+        if (buf.length < echoAwaitTarget.length) return;
+        const target = echoAwaitTarget;
+        for (let i = 0; i <= buf.length - target.length; i++) {
+          let match = true;
+          for (let j = 0; j < target.length; j++) {
+            if (buf[i + j] !== target[j]) { match = false; break; }
+          }
+          if (match) {
+            if (echoAwaitTimeout) { clearTimeout(echoAwaitTimeout); echoAwaitTimeout = null; }
+            echoAwaitTarget = null;
+            const r = echoAwaitResolve; echoAwaitResolve = null;
+            r(true);
+            return;
+          }
+        }
+      }
+
+      function waitForEcho(target, timeoutMs) {
+        return new Promise(resolve => {
+          echoAwaitTarget = target;
+          echoAwaitResolve = resolve;
+          echoAwaitTimeout = setTimeout(() => {
+            echoAwaitTimeout = null;
+            echoAwaitTarget = null;
+            const r = echoAwaitResolve; echoAwaitResolve = null;
+            if (r) r(false);
+          }, timeoutMs);
+        });
+      }
+
+      function processRxChunk(chunk) {
+        appendToRxBuf(chunk);
+        scanAddrInBuf(rxBuf);
+        scanEchoInBuf(rxBuf);
+        scanEchoInBufWaiter(rxBuf);
+        const splitByte = getSplitByte();
+        if (splitByte !== null) splitRxBufByByte(splitByte);
+        if (rxBuf.length > 0) {
+          resetRxTimer();
+        } else if (rxTimer) {
+          clearTimeout(rxTimer); rxTimer = null;
+        }
+      }
+
+      async function readLoop() {
+        reading = true;
+        rxBuf = new Uint8Array(0);
+        while (reading) {
+          try {
+            reader = port.readable.getReader();
+          } catch (err) {
+            log("无法获取读取器: " + err.message, "err");
+            await new Promise(resolve => setTimeout(resolve, 500));
+            continue;
+          }
+          try {
+            while (reading) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              if (value && value.length > 0) processRxChunk(value);
+            }
+          } catch (err) {
+            log("读取错误: " + err.message, "err");
+            log("500ms 后重新尝试读取...", "info");
+          } finally {
+            try { if (reader) reader.releaseLock(); } catch (e) { }
+            if (rxTimer) { clearTimeout(rxTimer); rxTimer = null; }
+            flushRxAsMessage();
+          }
+          if (!reading) break;
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+
+      async function disconnect() {
+        reading = false;
+        try { if (reader) { await reader.cancel(); } } catch (e) { }
+        try { if (writer) { await writer.close(); } } catch (e) { }
+        try { if (port) { await port.close(); } } catch (e) { }
+        if (rxTimer) { clearTimeout(rxTimer); rxTimer = null; }
+        if (successTimer) { clearTimeout(successTimer); successTimer = null; }
+        cancelEchoAwait();
+        lastSentBytes = null;
+        rxBuf = new Uint8Array(0);
+        lastRegPacket = null;
+        port = null; writer = null; reader = null;
+        currentSlaveAddr = null;
+        currentDeviceType = null;
+        refreshPresetHex();
+        updateStatus(false);
+        const si = $("statusIndicator");
+        if (si) si.style.opacity = "0";
+        const dtd = $("deviceTypeText");
+        if (dtd) dtd.textContent = "--";
+        const dticon = $("deviceTypeIcon");
+        if (dticon) dticon.innerHTML = "";
+        const dgrid = $("decoGrid");
+        if (dgrid) dgrid.querySelectorAll(".deco-item.active").forEach(el => el.classList.remove("active"));
+        log("串口已关闭", "info");
+        loadSavedPorts();
+      }
+
+      function updateCrcDisplay() {
+        try {
+          const payload = hexToBytes($("inputArea").value);
+          if (payload.length === 0) { $("crcDisplay").textContent = "-- --"; return; }
+          const crc = modbusCRC16(payload);
+          $("crcDisplay").textContent = crc.map(c => c.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+        } catch (err) {
+          $("crcDisplay").textContent = "-- --";
+        }
+      }
+
+      async function send(text) {
+        if (!port || !writer) return;
+        try {
+          const payload = hexToBytes(text);
+          const crc = modbusCRC16(payload);
+          const bytes = new Uint8Array(payload.length + 2);
+          bytes.set(payload, 0);
+          bytes[payload.length] = crc[0];
+          bytes[payload.length + 1] = crc[1];
+          await writer.write(bytes);
+          txBytes += bytes.length;
+          $("txBytes").textContent = txBytes;
+          lastSentBytes = new Uint8Array(bytes);
+          lastSentTime = Date.now();
+          setStatus("等待响应...", "waiting");
+          clearStatusAfter(3000);
+          log(bytesToHex(bytes), "tx");
+        } catch (err) {
+          log("发送错误: " + err.message, "err");
+        }
+      }
+
+      async function sendRegReply() {
+        if (!port || !writer) return;
+        const addrHex = $("regNewAddr").value.trim();
+        if (!/^[0-9A-Fa-f]{1,2}$/.test(addrHex)) {
+          const info = $("regReplyInfo");
+          info.textContent = "新地址格式错误 (00-FF)";
+          info.style.color = "#ff8c5a";
+          setTimeout(() => { info.textContent = ""; }, 3000);
+          return;
+        }
+        const newAddr = parseInt(addrHex, 16);
+        if (newAddr < 1 || newAddr > 247) {
+          const info = $("regReplyInfo");
+          info.textContent = "新地址超出范围 (1-247 / 01-F7)";
+          info.style.color = "#ff8c5a";
+          setTimeout(() => { info.textContent = ""; }, 3000);
+          return;
+        }
+        const info = $("regReplyInfo");
+        if (!lastRegPacket) {
+          info.textContent = "未收到注册请求包，请先让设备发送";
+          info.style.color = "#ff8c5a";
+          setTimeout(() => { info.textContent = ""; }, 3000);
+          return;
+        }
+        const dType = lastRegPacket[8];
+        const id0 = lastRegPacket[9];
+        const id1 = lastRegPacket[10];
+        const id2 = lastRegPacket[11];
+        const id3 = lastRegPacket[12];
+        const payload = new Uint8Array(13);
+        payload[0] = 0xFA;
+        payload[1] = 0x80;
+        payload[2] = id0;
+        payload[3] = id1;
+        payload[4] = id2;
+        payload[5] = id3;
+        payload[6] = 0x06;
+        payload[7] = newAddr;
+        payload[8] = dType;
+        payload[9] = 0xEF;
+        payload[10] = 0xE1;
+        payload[11] = 0x8B;
+        payload[12] = 0xEE;
+        const crc = modbusCRC16(payload);
+        const reply = new Uint8Array(15);
+        reply.set(payload, 0);
+        reply[13] = crc[0];
+        reply[14] = crc[1];
+        try {
+          await writer.write(reply);
+          txBytes += reply.length;
+          $("txBytes").textContent = txBytes;
+          log(bytesToHex(reply), "tx");
+          setStatus("注册回复已发送，开始自动测试", "success");
+          clearStatusAfter(5000);
+          const toHex = n => n.toString(16).padStart(2, "0").toUpperCase();
+          info.textContent = "已发送: FA 80 " + toHex(id0) + " " + toHex(id1) + " " + toHex(id2) + " " + toHex(id3) + " 06 " + toHex(newAddr) + " " + toHex(dType) + " EF E1 8B EE " + toHex(crc[0]) + " " + toHex(crc[1]);
+          info.style.color = "var(--accent-cyan)";
+
+          // 自动测试指令：每 5 秒发送一条，开/关指令等待回显
+          const testFrames = [
+            { desc: "开指令", data: [newAddr, 0x06, 0x00, 0x40, 0x01, 0x00], waitEcho: true },
+            { desc: "关指令", data: [newAddr, 0x06, 0x00, 0x40, 0x00, 0x00], waitEcho: true },
+            { desc: "查找指令", data: [newAddr, 0x03, 0x00, 0x00, 0x00, 0x01], waitEcho: false }
+          ];
+          (async function runTests() {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            let allPassed = true;
+            for (let i = 0; i < testFrames.length; i++) {
+              const frame = testFrames[i];
+              const p = new Uint8Array(frame.data);
+              const c = modbusCRC16(p);
+              const full = new Uint8Array(p.length + 2);
+              full.set(p, 0);
+              full[p.length] = c[0];
+              full[p.length + 1] = c[1];
+              try {
+                await writer.write(full);
+                txBytes += full.length;
+                $("txBytes").textContent = txBytes;
+                log(bytesToHex(full), "tx");
+              } catch (err) {
+                log("发送错误: " + err.message, "err");
+              }
+              const parts = Array.from(p).map(b => toHex(b)).join(" ");
+              if (frame.waitEcho) {
+                info.textContent = "测试 (" + (i + 1) + "/" + testFrames.length + ") " + frame.desc + ": " + parts + " " + toHex(c[0]) + " " + toHex(c[1]) + " → 等待响应";
+              } else {
+                info.textContent = "测试 (" + (i + 1) + "/" + testFrames.length + ") " + frame.desc + ": " + parts + " " + toHex(c[0]) + " " + toHex(c[1]);
+              }
+              info.style.color = "var(--accent-cyan)";
+
+              if (frame.waitEcho) {
+                const ok = await waitForEcho(full, 3000);
+                if (ok) {
+                  info.textContent = "测试 (" + (i + 1) + "/" + testFrames.length + ") " + frame.desc + ": " + parts + " " + toHex(c[0]) + " " + toHex(c[1]) + " → ✓";
+                  info.style.color = "#4ECDC4";
+                } else {
+                  info.textContent = "测试 (" + (i + 1) + "/" + testFrames.length + ") " + frame.desc + ": " + parts + " " + toHex(c[0]) + " " + toHex(c[1]) + " → ✗ 无响应";
+                  info.style.color = "#ff8c5a";
+                  allPassed = false;
+                }
+              }
+
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            if (allPassed) {
+              info.textContent = "测试通过";
+              info.style.color = "#4ECDC4";
+              setStatus("✓ 测试通过", "success");
+              clearStatusAfter(5000);
+              setTimeout(() => { info.textContent = ""; }, 5000);
+            } else {
+              info.textContent = "测试失败";
+              info.style.color = "#ff8c5a";
+              setStatus("✗ 测试失败", "waiting");
+              clearStatusAfter(5000);
+              setTimeout(() => { info.textContent = ""; }, 5000);
+            }
+          })();
+        } catch (err) {
+          log("发送错误: " + err.message, "err");
+        }
+      }
+
+      $("btnConnect").addEventListener("click", connect);
+      $("btnDisconnect").addEventListener("click", disconnect);
+
+      loadSavedPorts();
+      $("btnSend").addEventListener("click", () => {
+        const text = $("inputArea").value;
+        if (text.trim() === "") return;
+        send(text);
+      });
+      $("btnClear").addEventListener("click", () => { logArea.innerHTML = ""; rxBytes = 0; txBytes = 0; $("rxBytes").textContent = 0; $("txBytes").textContent = 0; });
+      $("btnRegReply").addEventListener("click", sendRegReply);
+      $("inputArea").addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "Enter") { e.preventDefault(); $("btnSend").click(); }
+      });
+      $("inputArea").addEventListener("input", updateCrcDisplay);
+
+      const deviceTypeList = $("deviceTypeList");
+      const deviceTypeRows = [];
+      deviceTypes.forEach((dt) => {
+        const row = document.createElement("div");
+        row.className = "preset-item";
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "pname";
+        nameSpan.textContent = dt.name;
+        const hexSpan = document.createElement("span");
+        hexSpan.className = "phex";
+        hexSpan.textContent = getDeviceTypeHex(dt.type);
+        const sendBtn = document.createElement("button");
+        sendBtn.className = "pbtn";
+        sendBtn.textContent = "发送";
+        sendBtn.disabled = true;
+        sendBtn.addEventListener("click", () => {
+          const h = getDeviceTypeHex(dt.type);
+          send(h);
+        });
+        row.appendChild(nameSpan);
+        row.appendChild(hexSpan);
+        row.appendChild(sendBtn);
+        deviceTypeList.appendChild(row);
+        deviceTypeRows.push(row);
+      });
+
+      const decoGrid = $("decoGrid");
+      if (decoGrid) {
+        const decoIcons = {
+          "CO2": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#00d4ff" stroke-width="1.5"/><text x="12" y="16" text-anchor="middle" fill="#34ffc8" font-size="10" font-weight="600" font-family="Arial">CO₂</text><circle cx="5" cy="7" r="1.2" fill="#00d4ff" opacity="0.6"/><circle cx="19" cy="18" r="0.8" fill="#34ffc8" opacity="0.5"/></svg>',
+          "加热": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L6 12H8V20H16V12H18L12 4Z" stroke="#ff9f43" stroke-width="1.5" stroke-linejoin="round" fill="rgba(255, 159, 67, 0.15)"/><circle cx="12" cy="14" r="1.5" fill="#ff5638"/></svg>',
+          "加湿": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C12 3 5 11 5 16C5 19 8 21 12 21C16 21 19 19 19 16C19 11 12 3 12 3Z" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.15)"/><path d="M8 17C8 19 10 20 12 20" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/></svg>',
+          "除湿": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="5" width="16" height="14" rx="2" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><rect x="7" y="8" width="10" height="8" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><path d="M8 10L16 10M8 13L16 13" stroke="#34ffc8" stroke-width="1" stroke-linecap="round"/></svg>',
+          "降温": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L8 9H11V14H13V9H16L12 4Z" stroke="#34ffc8" stroke-width="1.5" stroke-linejoin="round" fill="rgba(52, 255, 200, 0.15)"/><path d="M7 17L17 17" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><path d="M8 19L16 19" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/></svg>',
+          "排气风扇": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.08)"/><path d="M12 3C10 5 10 8 12 9C14 10 16 8 16 6L12 3Z" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.2)"/><path d="M12 3C14 5 14 8 12 9" stroke="#a855f7" stroke-width="1.5"/><circle cx="12" cy="12" r="1.5" fill="#00d4ff"/></svg>',
+          "进气风扇": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.08)"/><path d="M12 12L12 4C12 6 12 10 12 10C14 10 16 8 16 6" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/><path d="M12 12L4 12C6 12 10 12 10 12C10 14 8 16 6 16" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="1.5" fill="#a855f7"/></svg>',
+          "灯光开关": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L9 8H15L12 3Z" stroke="#ff9f43" stroke-width="1.5" fill="rgba(255, 159, 67, 0.2)"/><circle cx="12" cy="14" r="5" stroke="#ff9f43" stroke-width="1.5" fill="rgba(255, 159, 67, 0.1)"/><path d="M10 12L12 10L14 12L12 14L10 12Z" fill="#ff9f43"/><rect x="9" y="19" width="6" height="2" rx="1" stroke="#34ffc8" stroke-width="1.5"/></svg>',
+          "灌溉类设备": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 20L5 15L12 15L12 20Z" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.1)"/><circle cx="8" cy="17" r="1" fill="#34ffc8"/><path d="M14 12L16 8M16 8L18 10M16 8L14 10" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="8" r="1.5" fill="#00d4ff"/></svg>',
+          "CO2 down": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="10" r="7" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><text x="12" y="13" text-anchor="middle" fill="#00d4ff" font-size="8" font-weight="600" font-family="Arial">CO₂</text><path d="M8 20L12 15L16 20" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(52, 255, 200, 0.15)"/></svg>',
+          "泵": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10" width="10" height="10" rx="1" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><circle cx="10" cy="15" r="3" stroke="#34ffc8" stroke-width="1.5"/><path d="M15 12L20 12L20 18L15 18" stroke="#34ffc8" stroke-width="1.5" fill="none"/><path d="M5 10L5 7L10 7" stroke="#00d4ff" stroke-width="1.5"/></svg>',
+          "搅拌装置": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 20L7 8H17L17 20" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.08)"/><circle cx="12" cy="14" r="2" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.15)"/><path d="M9 14L15 14M12 12L12 16" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="6" r="2" fill="#00d4ff"/></svg>',
+          "新风-排废气": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="14" height="14" rx="2" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.08)"/><path d="M9 10L15 10M9 13L15 13" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1 2"/><path d="M17 12L22 12" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/><path d="M20 10L22 12L20 14" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+          "新风-注入新鲜空气": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="14" height="14" rx="2" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><path d="M9 10L15 10M9 13L15 13" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="1 2"/><path d="M2 12L7 12" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><path d="M4 10L2 12L4 14" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+          "timer": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.08)"/><path d="M12 8L12 13L16 15" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 3L16 3" stroke="#ff9f43" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="3" r="1" fill="#ff9f43"/></svg>',
+          "打氧机": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 18L19 18L17 6L7 6L5 18Z" stroke="#34ffc8" stroke-width="1.5" fill="rgba(52, 255, 200, 0.08)"/><circle cx="9" cy="14" r="1.2" fill="#00d4ff"/><circle cx="13" cy="12" r="1" fill="#00d4ff" opacity="0.7"/><circle cx="15" cy="15" r="0.8" fill="#34ffc8" opacity="0.6"/><path d="M10 6L10 2L14 2L14 6" stroke="#34ffc8" stroke-width="1.5"/></svg>',
+          "水加热设备": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 4L17 4L17 20L7 20Z" stroke="#ff9f43" stroke-width="1.5" fill="rgba(255, 159, 67, 0.1)"/><path d="M9 14C9 14 10 12 11 14C12 16 13 14 13 14C13 14 14 12 15 14" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="11" cy="9" r="1.5" fill="#ff5638"/><circle cx="14" cy="9" r="1.5" fill="#ff5638"/></svg>',
+          "水制冷设备": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="16" rx="1" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><rect x="7" y="6" width="10" height="12" stroke="#34ffc8" stroke-width="1" fill="rgba(52, 255, 200, 0.05)"/><path d="M9 9L15 9M9 12L15 12" stroke="#34ffc8" stroke-width="1" stroke-linecap="round" stroke-dasharray="1 1"/><path d="M12 6L12 2M10 2L14 2" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/></svg>',
+          "补水设备": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 4L16 4L14 20L10 20Z" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><path d="M9 10L10 12L12 9L14 12L15 10" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M12 15L12 18" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/></svg>',
+          "水循环设备": '<svg class="deco-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C12 3 6 8 6 13C6 16 9 19 12 19C15 19 18 16 18 13C18 8 12 3 12 3Z" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0, 212, 255, 0.1)"/><path d="M9 13C9 15 10 17 12 17C14 17 15 15 15 13" stroke="#34ffc8" stroke-width="1.5" stroke-linecap="round"/><path d="M7 5C8 6 9 8 10 9" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/></svg>'
+        };
+        deviceTypes.forEach((dt, idx) => {
+          const item = document.createElement("div");
+          item.className = "deco-item";
+          item.setAttribute("data-type", "0x" + dt.type.toString(16).toUpperCase().padStart(2, "0"));
+          const icon = document.createElement("div");
+          icon.innerHTML = decoIcons[dt.name] || decoIcons["CO2"];
+          const name = document.createElement("div");
+          name.className = "deco-name";
+          name.textContent = dt.name;
+          const code = document.createElement("div");
+          code.className = "deco-code";
+          code.textContent = "0x" + dt.type.toString(16).toUpperCase().padStart(2, "0");
+          item.appendChild(icon);
+          item.appendChild(name);
+          item.appendChild(code);
+          item.style.animationDelay = (idx * 0.05) + "s";
+          item.style.opacity = "0";
+          item.style.animation = "fadeInUp 0.5s ease forwards " + (idx * 0.05) + "s";
+          decoGrid.appendChild(item);
+        });
+      }
+
+      function refreshDeviceTypeHex() {
+        deviceTypeRows.forEach((row, idx) => {
+          const hexSpan = row.querySelector(".phex");
+          if (hexSpan) hexSpan.textContent = getDeviceTypeHex(deviceTypes[idx].type);
+        });
+      }
+
+      window.addEventListener("beforeunload", async () => { if (port) await disconnect(); });
+    })();
+  </script>
+</body>
+
+</html>
